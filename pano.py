@@ -65,7 +65,6 @@ SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:
 def verileri_yukle():
     try:
         df = pd.read_csv(SHEET_URL)
-        # Eğer tablonun içi boşsa hata vermemesi için sütunları koru
         if df.empty:
             return pd.DataFrame(columns=["İsim", "Not", "Saat"])
         return df
@@ -106,7 +105,6 @@ yeni_not = st.text_input("Duvara bir mesaj yazın:")
 
 if st.button("Duvara Çak! 📌"):
     if isim and yeni_not:
-        # Notu anlık ekrana yansıtmak ve Excel'e göndermek için hazır mesaj
         st.success(f"Harika! Notun sisteme işlendi. (Google E-Tablonuz arkada kayıtları tutuyor)")
     else:
         st.warning("Lütfen adını ve mesajını boş bırakma.")
