@@ -66,22 +66,17 @@ notlar_df = verileri_yukle_canli()
 st.subheader("💬 Duvardaki Son Notlar")
 
 if not notlar_df.empty:
-    # Sıralama: [0]: Zaman Damgası, [1]: İsim, [2]: Not, [3]: Görsel veya GIF Linki
     ters_df = notlar_df.iloc[::-1]
     for index, row in ters_df.iterrows():
         try:
             v_isim = str(row.iloc[1]) if len(row) > 1 else str(row.iloc[0])
             v_not = str(row.iloc[2]) if len(row) > 2 else str(row.iloc[1])
-            
-            # Eğer formdan gelen bir görsel/GIF linki varsa temizleyip alıyoruz
             v_gorsel = str(row.iloc[3]).strip() if len(row) > 3 else ""
-            
             v_saat = str(row.iloc[0]).split(" ")[1][:5] if (" " in str(row.iloc[0])) else su_anki_saat
             
             if v_isim.strip() == "" or v_not.strip() == "" or v_isim == "nan" or v_not == "nan":
                 continue
                 
-            # Eğer bir görsel linki girildiyse HTML kutusunu oluşturuyoruz
             gorsel_html = ""
             if v_gorsel != "" and v_gorsel != "nan" and (v_gorsel.startswith("http") or v_gorsel.startswith("www")):
                 gorsel_html = f'<img src="{v_gorsel}" style="max-width: 100%; border-radius: 12px; margin-top: 12px; display: block; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">'
@@ -120,20 +115,34 @@ if st.session_state['kullanici_adi'] == "":
 else:
     st.markdown(f"<div class='welcome-text'>👤 Aktif Kullanıcı: <b>{st.session_state['kullanici_adi']}</b></div>", unsafe_allow_html=True)
     
-    # --- YENİ FORMUN UYGULAMAYA GÖMÜLDÜĞÜ ALAN ---
     st.write("📌 Duvara Ömür Boyu Kalıcı Not Bırak")
     st.caption("Mesajınıza fotoğraf veya GIF eklemek istiyorsanız, internetteki herhangi bir görselin üzerine sağ tıklayıp 'Resim adresini kopyala' deyin ve alttaki ilgili kutuya yapıştırın!")
     
-    # Gönderdiğin form düzenleme linkinin canlı gömme versiyonu:
     GOOGLE_FORM_LINKI = "https://docs.google.com/forms/d/e/1FAIpQLScC1L8Z_AIsJb0uB0BwOnd08pY7BqI0Sre5gMWhbXzZ_K6w9A/viewform?embedded=true"
     st.markdown(f'<iframe src="{GOOGLE_FORM_LINKI}" width="100%" height="450" frameborder="0" marginheight="0" marginwidth="0">Yükleniyor…</iframe>', unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # --- AÇILIR KAPANIR KORUNAKLI ÇİZİM ALANI (EN ALTTA) ---
+    # --- AÇILIR KAPANIR KORUNAKLI ÇİZİM ALANI ---
     with st.expander("🎨 Çizim Yapmak İçin Tıkla"):
         st.write("Buraya dilediğiniz gibi çizim yapabilirsiniz. İşiniz bittiğinde yukarıdaki başlığa tekrar basarak kapatabilirsiniz:")
         
         col1, col2, col3 = st.columns(3)
         with col1:
-            firca_tipi = st.selectbox("Fırça Tür
+            firca_tipi = st.selectbox("Fırça Türü", ["freedraw", "line", "rect", "circle", "transform"])
+        with col2:
+            firca_kalinligi = st.slider("Fırça Kalınlığı", 1, 20, 4)
+        with col3:
+            renk = st.color_picker("Renk Seç", "#ff4b4b")
+
+        canvas_result = st_canvas(
+            fill_color="rgba(255, 165, 0, 0.2)",
+            stroke_width=firca_kalinligi,
+            stroke_color=renk,
+            background_color="#1a1c24",
+            height=350,
+            width=500,
+            drawing_mode=firca_tipi,
+            update_streamlit=True,
+            key="gelismis_canvas",
+        )
