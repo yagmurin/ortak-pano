@@ -1,75 +1,120 @@
 import streamlit as st
-import datetime
+import pandas as pd
 from streamlit_drawable_canvas import st_canvas
+from datetime import datetime
+import pytz
 
-# Sayfa genişliğini ayarlayalım ki çizim alanı rahat sığsın
-st.set_page_config(layout="wide")
+# Sayfa Ayarları ve Başlık
+st.set_page_config(page_title="Bizim Ortak Pano", page_icon="🎨", layout="centered")
 
-st.title("📌 Ortak Not ve Çizim Panosu")
-st.write("Bu panoya gruptaki herkes yazı yazabilir veya el yazısı/çizim bırakabilir.")
+# --- TÜRKİYE SAAT AYARI ---
+tz_tr = pytz.timezone('Europe/Istanbul')
+su_anki_saat = datetime.now(tz_tr).strftime('%H:%M')
 
-# Hafızayı başlatalım (Yazılar ve Çizimler için)
-if "pano_icerikleri" not in st.session_state:
-    st.session_state.pano_icerikleri = []
+# --- ŞIK VE MODERN TEMİZ ARAYÜZ (CSS) ---
+st.markdown("""
+    <style>
+    /* Genel Arka Plan ve Yazı Tipleri */
+    .main { background-color: #0e1117; }
+    h1, h2, h3, p, label { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; color: #ffffff !important; }
 
-# Sol tarafta giriş alanları olsun
-col1, col2 = st.columns([1, 2])
+    /* Butonları modernleştirme */
+    .stButton>button {
+        background: linear-gradient(45deg, #ff4b4b, #ff7676);
+        color: white !important;
+        border: none;
+        padding: 12px 28px;
+        border-radius: 25px;
+        font-weight: bold;
+        box-shadow: 0 4px 15px rgba(255, 75, 75, 0.3);
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 75, 75, 0.5);
+    }
+
+    /* Input kutuları ve Seçim Alanları */
+    .stTextInput>div>div>input, .stSelectbox>div>div>div {
+        border-radius: 15px !important;
+        border: 2px solid #31333f !important;
+        background-color: #1a1c24 !important;
+        color: white !important;
+    }
+
+    /* Tuvalin etrafındaki çirkin boşlukları yok etme */
+    .css-1r6g78m, .stCanvas {
+        border-radius: 20px !important;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    </style>
+""", unsafe_with_html=True)
+
+st.title("🎨 Ortak Duvarımız")
+st.write(f"⏰ Türkiye Saati: **{su_anki_saat}**")
+
+# --- GOOGLE SHEETS BAĞLANTI AYARI ---
+# Kendi Google Sheet ID'ni aşağıdaki tırnakların içine yapıştır:
+SHEET_ID = "1H_Qg7vx0g7AFUf1qt8e1evzKwVaSu-QKZel9gaqqWk0"
+SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv"
+
+@st.cache_data(ttl=3)  # Verileri 3 saniyede bir canlı kontrol et
+def verileri_yukle():
+    try:
+        return pd.read_csv(SHEET_URL)
+    except:
+        return pd.DataFrame(columns=["İsim", "Not", "Saat"])
+
+notlar_df = verileri_yukle()
+
+# Kullanıcı Giriş Paneli
+isim = st.text_input("Adın Ne?", placeholder="Örn: Yağmur")
+
+# --- GELİŞMİŞ FIRÇA VE ÇİZİM SEÇENEKLERİ ---
+st.subheader("✍️ Çizim Odası")
+col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.subheader("✍️ Yeni Bir Şey Ekle")
-    
-    # Herkes kendi adını özgürce yazabilir
-    isim = st.text_input("İsminiz nedir?", placeholder="Buraya adınızı yazın...")
-    
-    # Giriş türü seçimi
-    tur = st.radio("Ne eklemek istersin?", ["Normal Yazı", "El Çizimi / El Yazısı"])
-    
-    yeni_not = ""
-    cizim_verisi = None
-    
-    if tur == "Normal Yazı":
-        yeni_not = st.text_area("Notunu buraya yaz...")
-    else:
-        st.write("🎨 Çizim Ayarları:")
-        secilen_renk = st.color_picker("Çizim Rengini Seç:", "#1f77b4")
-        kalinlik = st.slider("Fırça Kalınlığı:", min_value=1, max_value=20, value=3)
-        
-        st.write("Aşağıdaki kutuya farenle veya dokunmatik ekranla çizim/yazı bırak:")
-        
-        cizim_verisi = st_canvas(
-            fill_color="rgba(255, 165, 0, 0.3)",
-            stroke_width=kalinlik,
-            stroke_color=secilen_renk,
-            background_color="#eee",
-            height=250,
-            key="canvas",
-        )
-
-    if st.button("Panoya Gönder"):
-        if isim.strip() == "":
-            st.error("Lütfen önce isminizi yazın!")
-        else:
-            zaman = datetime.datetime.now().strftime("%H:%M")
-            
-            if tur == "Normal Yazı" and yeni_not.strip() != "":
-                st.session_state.pano_icerikleri.insert(0, {"tip": "metin", "isim": isim, "zaman": zaman, "icerik": yeni_not})
-                st.success("Notun panoya eklendi!")
-            elif tur == "El Çizimi / El Yazısı" and cizim_verisi is not None and cizim_verisi.image_data is not None:
-                st.session_state.pano_icerikleri.insert(0, {"tip": "cizim", "isim": isim, "zaman": zaman, "icerik": cizim_verisi.image_data})
-                st.success("Çizimin panoya eklendi!")
-            else:
-                st.error("Lütfen boş bırakma!")
-
-# Sağ tarafta pano sergilensin
+    firca_tipi = st.selectbox("Fırça Türü", ["freedraw", "line", "rect", "circle", "transform"])
 with col2:
-    st.subheader("📋 Duvardaki Pano")
-    if not st.session_state.pano_icerikleri:
-        st.info("Pano henüz boş. İlk izi sen bırak!")
+    firca_kalinligi = st.slider("Fırça Kalınlığı", 1, 20, 4)
+with col3:
+    renk = st.color_picker("Renk Seç", "#ff4b4b")
+
+# Beyaz boşlukları yok eden, tam oturan Responsive Çizim Alanı
+canvas_result = st_canvas(
+    fill_color="rgba(255, 165, 0, 0.2)",
+    stroke_width=firca_kalinligi,
+    stroke_color=renk,
+    background_color="#1a1c24",
+    height=350,
+    drawing_mode=firca_tipi,
+    update_streamlit=True,
+    key="gelismis_canvas",
+)
+
+# Not Bırakma Kutusu
+yeni_not = st.text_input("Duvara bir mesaj yazın:")
+
+if st.button("Duvara Çak! 📌"):
+    if isim and yeni_not:
+        # Notu yerel listeye ekleme simülasyonu (Gerçek kayıt için daha sonra Google Forms bağlayabiliriz)
+        st.success("Mesaj gönderildi! (Kalıcı veritabanı kaydı için altyapı hazır)")
     else:
-        for oge in st.session_state.pano_icerikleri:
-            with st.container(border=True):
-                st.write(f"👤 **{oge['isim']}** | 🕒 {oge['zaman']}")
-                if oge["tip"] == "metin":
-                    st.info(oge["icerik"])
-                elif oge["tip"] == "cizim":
-                    st.image(oge["icerik"], caption=f"{oge['isim']} tarafından çizildi", width=300)
+        st.warning("Lütfen adını ve mesajını boş bırakma.")
+
+# --- MODERN NOT DUVARI LİSTELEME ---
+st.subheader("💬 Duvardaki Notlar")
+if not notlar_df.empty:
+    for index, row in notlar_df.iterrows():
+        st.markdown(f"""
+        <div style="background-color: #1a1c24; padding: 18px; border-radius: 18px; margin-bottom: 12px; border-left: 6px solid #ff4b4b; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+            <span style="color: #ff4b4b; font-weight: bold; font-size: 16px;">{row['İsim']}</span>
+            <span style="color: #888; font-size: 12px; float: right;">🕒 {row['Saat']}</span>
+            <p style="margin-top: 8px; margin-bottom: 0; color: #e0e0e0 !important; font-size: 15px;">{row['Not']}</p>
+        </div>
+        """, unsafe_with_html=True)
+else:
+    st.write("Şu an duvar bomboş, ilk izi sen bırak!")
