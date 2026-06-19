@@ -142,6 +142,7 @@ else:
         if mesaj_girişi.strip() != "":
             aktif_isim = st.session_state['kullanici_adi']
             
+            # Senin görseldeki Web Uygulaması URL linkini buraya sabitledim!
             WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzKYhkkkaF7SdChxMKi4bEN11gJmPeS5zzneOvDn7aceVJTrY4pzj1OYyuWAAwTxEhlnw/exec"
             
             veri_paketi = {
@@ -151,37 +152,4 @@ else:
                 "gorsel": gorsel_girişi
             }
             try:
-                requests.post(WEB_APP_URL, data=json.dumps(veri_paketi))
-                st.success("Mesajın kalıcı olarak mühürlendi ve duvara çakıldı!")
-                time.sleep(1)
-                st.rerun()
-            except:
-                st.error("Bağlantı kurulurken ufak bir sapma oldu, lütfen tekrar deneyin.")
-        else:
-            st.warning("Lütfen mesaj alanını boş bırakmayın.")
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # --- AÇILIR KAPANIR KORUNAKLI ÇİZİM ALANI ---
-    with st.expander("🎨 Çizim Yapmak İçin Tıkla"):
-        st.write("Buraya dilediğiniz gibi çizim yapabilirsiniz:")
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            firca_tipi = st.selectbox("Fırça Türü", ["freedraw", "line", "rect", "circle", "transform"])
-        with col2:
-            firca_kalinligi = st.slider("Fırça Kalınlığı", 1, 20, 4)
-        with col3:
-            renk = st.color_picker("Renk Seç", "#ff4b4b")
-
-        canvas_result = st_canvas(
-            fill_color="rgba(255, 165, 0, 0.2)",
-            stroke_width=firca_kalinligi,
-            stroke_color=renk,
-            background_color="#1a1c24",
-            height=350,
-            width=500,
-            drawing_mode=firca_tipi,
-            update_streamlit=True,
-            key="gelismis_canvas",
-        )
+                requests.post(WEB_APP_URL,
