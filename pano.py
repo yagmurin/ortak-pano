@@ -1,22 +1,39 @@
 import streamlit as st
 import pandas as pd
 from streamlit_drawable_canvas import st_canvas
-from datetime import datetime
-import pytz
+from datetime import datetime, timedelta, timezone
 import time
+import requests
 
 # Sayfa Ayarları
 st.set_page_config(page_title="Bizim Ortak Pano", page_icon="🎨", layout="centered")
 
 # --- TÜRKİYE SAAT AYARI ---
-tz_tr = pytz.timezone('Europe/Istanbul')
-su_anki_saat = datetime.now(tz_tr).strftime('%H:%M')
+utc_zamani = datetime.now(timezone.utc)
+tr_zamani = utc_zamani + timedelta(hours=3)
+su_anki_saat = tr_zamani.strftime('%H:%M')
 
 # --- ŞIK VE MODERN TEMİZ ARAYÜZ (CSS) ---
 st.markdown("""
     <style>
     .main { background-color: #0e1117; }
     h1, h2, h3, p, label { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; color: #ffffff !important; }
+    
+    .stButton>button {
+        background: linear-gradient(45deg, #ff4b4b, #ff7676);
+        color: white !important;
+        border: none;
+        padding: 12px 28px;
+        border-radius: 25px;
+        font-weight: bold;
+        box-shadow: 0 4px 15px rgba(255, 75, 75, 0.3);
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 75, 75, 0.5);
+    }
     
     .stTextInput>div>div>input, .stSelectbox>div>div>div {
         border-radius: 15px !important;
@@ -69,10 +86,10 @@ if not notlar_df.empty:
     ters_df = notlar_df.iloc[::-1]
     for index, row in ters_df.iterrows():
         try:
-            v_isim = str(row.iloc[1]) if len(row) > 1 else str(row.iloc[0])
-            v_not = str(row.iloc[2]) if len(row) > 2 else str(row.iloc[1])
+            v_isim = str(row.iloc[0])
+            v_not = str(row.iloc[1])
+            v_saat = str(row.iloc[2]) if len(row) > 2 else su_anki_saat
             v_gorsel = str(row.iloc[3]).strip() if len(row) > 3 else ""
-            v_saat = str(row.iloc[0]).split(" ")[1][:5] if (" " in str(row.iloc[0])) else su_anki_saat
             
             if v_isim.strip() == "" or v_not.strip() == "" or v_isim == "nan" or v_not == "nan":
                 continue
@@ -115,17 +132,38 @@ if st.session_state['kullanici_adi'] == "":
 else:
     st.markdown(f"<div class='welcome-text'>👤 Aktif Kullanıcı: <b>{st.session_state['kullanici_adi']}</b></div>", unsafe_allow_html=True)
     
+    # --- UYGULAMANIN KENDİ İÇİNDEKİ ORİJİNAL MESAJ KUTUSU ---
     st.write("📌 Duvara Ömür Boyu Kalıcı Not Bırak")
-    st.caption("Mesajınıza fotoğraf veya GIF eklemek istiyorsanız, internetteki herhangi bir görselin üzerine sağ tıklayıp 'Resim adresini kopyala' deyin ve alttaki ilgili kutuya yapıştırın!")
     
-    GOOGLE_FORM_LINKI = "https://docs.google.com/forms/d/e/1FAIpQLScC1L8Z_AIsJb0uB0BwOnd08pY7BqI0Sre5gMWhbXzZ_K6w9A/viewform?embedded=true"
-    st.markdown(f'<iframe src="{GOOGLE_FORM_LINKI}" width="100%" height="450" frameborder="0" marginheight="0" marginwidth="0">Yükleniyor…</iframe>', unsafe_allow_html=True)
+    mesaj_girişi = st.text_input("Mesajınızı yazın:")
+    gorsel_girişi = st.text_input("Varsa Görsel veya GIF Linki (İsteğe bağlı):", placeholder="https://.../resim.gif")
+    
+    if st.button("Duvara Çak! 📌"):
+        if mesaj_girişi.strip() != "":
+            aktif_isim = st.session_state['kullanici_adi']
+            
+            # Form falan yok, veriyi direkt Excel Web API köprüsüne üflüyoruz
+            form_post_url = "https://docs.google.com/forms/d/e/1FAIpQLScC1L8Z_AIsJb0uB0BwOnd08pY7BqI0Sre5gMWhbXzZ_K6w9A/formResponse"
+            veri_paketi = {
+                'entry.1343759952': aktif_isim,   # Formdaki İsim alanı id'si
+                'entry.101700650': mesaj_girişi, # Formdaki Not alanı id'si
+                'entry.1706689626': gorsel_girişi # Formdaki Görsel alanı id'si
+            }
+            try:
+                requests.post(form_post_url, data=veri_paketi)
+                st.success("Mesajın ömür boyu kalacak şekilde başarıyla duvara çakıldı!")
+                time.sleep(1)
+                st.rerun()
+            except:
+                st.error("Bağlantı kurulurken minik bir sapma oldu, lütfen tekrar deneyin.")
+        else:
+            st.warning("Lütfen mesaj alanını boş bırakmayın.")
     
     st.markdown("<br>", unsafe_allow_html=True)
     
     # --- AÇILIR KAPANIR KORUNAKLI ÇİZİM ALANI ---
     with st.expander("🎨 Çizim Yapmak İçin Tıkla"):
-        st.write("Buraya dilediğiniz gibi çizim yapabilirsiniz. İşiniz bittiğinde yukarıdaki başlığa tekrar basarak kapatabilirsiniz:")
+        st.write("Buraya dilediğiniz gibi çizim yapabilirsiniz:")
         
         col1, col2, col3 = st.columns(3)
         with col1:
