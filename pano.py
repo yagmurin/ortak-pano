@@ -52,7 +52,7 @@ st.markdown("""
         margin: 0 auto !important;
     }
     </style>
-""", unsafe_with_html=True)
+""", unsafe_allow_html=True)
 
 st.title("🎨 Ortak Duvarımız")
 st.write(f"⏰ Türkiye Saati: **{su_anki_saat}**")
@@ -123,7 +123,7 @@ if not notlar_df.empty and len(notlar_df.columns) >= 3:
                 <span style="color: #888; font-size: 12px; float: right;">🕒 {v_saat}</span>
                 <p style="margin-top: 8px; margin-bottom: 0; color: #e0e0e0 !important; font-size: 15px;">{v_not}</p>
             </div>
-            """, unsafe_with_html=True)
+            """, unsafe_allow_html=True)
         except:
             continue
 else:
