@@ -4,6 +4,7 @@ from streamlit_drawable_canvas import st_canvas
 from datetime import datetime, timedelta, timezone
 import time
 import requests
+import json
 
 # Sayfa Ayarları
 st.set_page_config(page_title="Bizim Ortak Pano", page_icon="🎨", layout="centered")
@@ -94,93 +95,4 @@ if not notlar_df.empty:
             if v_isim.strip() == "" or v_not.strip() == "" or v_isim == "nan" or v_not == "nan":
                 continue
                 
-            gorsel_html = ""
-            if v_gorsel != "" and v_gorsel != "nan" and (v_gorsel.startswith("http") or v_gorsel.startswith("www")):
-                gorsel_html = f'<img src="{v_gorsel}" style="max-width: 100%; border-radius: 12px; margin-top: 12px; display: block; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">'
-
-            st.markdown(f"""
-            <div style="background-color: #1a1c24; padding: 18px; border-radius: 18px; margin-bottom: 12px; border-left: 6px solid #ff4b4b; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                <span style="color: #ff4b4b; font-weight: bold; font-size: 16px;">{v_isim}</span> 
-                <span style="color: #888; font-size: 12px; float: right;">🕒 {v_saat}</span>
-                <p style="margin-top: 8px; margin-bottom: 0; color: #e0e0e0 !important; font-size: 15px;">{v_not}</p>
-                {gorsel_html}
-            </div>
-            """, unsafe_allow_html=True)
-        except:
-            continue
-else:
-    st.write("Şu an duvar boş görünüyor. İlk kalıcı notu aşağıdan sen uçur!")
-
-st.markdown("---")
-
-# =========================================================
-# 2. BÖLÜM: MESAJ YAZMA VE ÇİZİM ODASI (SAYFANIN ALTINDA)
-# =========================================================
-st.subheader("🛠️ Panel")
-
-if 'kullanici_adi' not in st.session_state:
-    st.session_state['kullanici_adi'] = ""
-
-if st.session_state['kullanici_adi'] == "":
-    gecici_isim = st.text_input("Uygulamayı kullanmak için adını yaz:", placeholder="Örn: Yağmur")
-    if st.button("Giriş Yap 🚀"):
-        if gecici_isim.strip() != "":
-            st.session_state['kullanici_adi'] = gecici_isim.strip()
-            st.rerun()
-        else:
-            st.warning("Lütfen geçerli bir isim yazın.")
-else:
-    st.markdown(f"<div class='welcome-text'>👤 Aktif Kullanıcı: <b>{st.session_state['kullanici_adi']}</b></div>", unsafe_allow_html=True)
-    
-    # --- UYGULAMANIN KENDİ İÇİNDEKİ ORİJİNAL MESAJ KUTUSU ---
-    st.write("📌 Duvara Ömür Boyu Kalıcı Not Bırak")
-    
-    mesaj_girişi = st.text_input("Mesajınızı yazın:")
-    gorsel_girişi = st.text_input("Varsa Görsel veya GIF Linki (İsteğe bağlı):", placeholder="https://.../resim.gif")
-    
-    if st.button("Duvara Çak! 📌"):
-        if mesaj_girişi.strip() != "":
-            aktif_isim = st.session_state['kullanici_adi']
-            
-            # Form falan yok, veriyi direkt Excel Web API köprüsüne üflüyoruz
-            form_post_url = "https://docs.google.com/forms/d/e/1FAIpQLScC1L8Z_AIsJb0uB0BwOnd08pY7BqI0Sre5gMWhbXzZ_K6w9A/formResponse"
-            veri_paketi = {
-                'entry.1343759952': aktif_isim,   # Formdaki İsim alanı id'si
-                'entry.101700650': mesaj_girişi, # Formdaki Not alanı id'si
-                'entry.1706689626': gorsel_girişi # Formdaki Görsel alanı id'si
-            }
-            try:
-                requests.post(form_post_url, data=veri_paketi)
-                st.success("Mesajın ömür boyu kalacak şekilde başarıyla duvara çakıldı!")
-                time.sleep(1)
-                st.rerun()
-            except:
-                st.error("Bağlantı kurulurken minik bir sapma oldu, lütfen tekrar deneyin.")
-        else:
-            st.warning("Lütfen mesaj alanını boş bırakmayın.")
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # --- AÇILIR KAPANIR KORUNAKLI ÇİZİM ALANI ---
-    with st.expander("🎨 Çizim Yapmak İçin Tıkla"):
-        st.write("Buraya dilediğiniz gibi çizim yapabilirsiniz:")
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            firca_tipi = st.selectbox("Fırça Türü", ["freedraw", "line", "rect", "circle", "transform"])
-        with col2:
-            firca_kalinligi = st.slider("Fırça Kalınlığı", 1, 20, 4)
-        with col3:
-            renk = st.color_picker("Renk Seç", "#ff4b4b")
-
-        canvas_result = st_canvas(
-            fill_color="rgba(255, 165, 0, 0.2)",
-            stroke_width=firca_kalinligi,
-            stroke_color=renk,
-            background_color="#1a1c24",
-            height=350,
-            width=500,
-            drawing_mode=firca_tipi,
-            update_streamlit=True,
-            key="gelismis_canvas",
-        )
+            gors
